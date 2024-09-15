@@ -1,4 +1,6 @@
-﻿#include <sys/resource.h>
+﻿#define PATH_LEN 200
+
+#include <sys/resource.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -10,6 +12,15 @@ int main(int argc, char* argv[]) {
 	struct rlimit core_f;
 	extern char** environ;
 	char** env;
+	long int new_ulimit;
+	char* cwd;
+
+	if (argc < 2) {
+		fprintf(stderr, "No arguments\n");
+		exit(0);
+			
+	}
+
 	while ((opt = getopt(argc, argv, "ispuU:cC:dvV:")) != -1) {
 		switch (opt) {
 		case('i'):
@@ -34,8 +45,15 @@ int main(int argc, char* argv[]) {
 			break;
 
 		case('U'):
-			long int new_ulimit = atol(optarg);
+			new_ulimit = atol(optarg);
+			if (new_ulimit % 512 != 0) {
+				fprintf(stderr, "Value for ulimit has to be divisible by 512\n");
+				break;
+			}
 			new_ulimit = ulimit(UL_SETFSIZE, new_ulimit / 512);
+			if (new_ulimit == -1) {
+				fprintf(stderr, "Сan't change ulimit\n");
+			}
 			break;
 
 		case('c'):
@@ -44,16 +62,20 @@ int main(int argc, char* argv[]) {
 			break;
 
 		case('C'):
-			//check
 			getrlimit(RLIMIT_CORE, &core_f);
 			core_f.rlim_cur = atol(optarg);
 			if (setrlimit(RLIMIT_CORE, &core_f) == -1)
-				fprintf(stderr, "Must be super-user to increase core\n");
+				fprintf(stderr, "Can't change core\n");
 			break;
 
 		case('d'):
-			printf("current working directory is: %s\n",
-				getcwd(NULL, 100));
+			cwd = getcwd(NULL, 200);
+			if (cwd == NULL) {
+				fprintf(stderr, "Couldn't get current directory");
+				break;
+			}
+			printf("current working directory is: %s\n", cwd);
+			free(cwd);
 			break;
 
 		case('v'):
@@ -67,6 +89,11 @@ int main(int argc, char* argv[]) {
 		case('V'):
 			putenv(optarg);
 			break;
+
+		case('?'):
+			fprintf(stderr, "Unknown option: -%c\n", optopt);
+			break;
 		}
 	}
+	exit(0);
 }
