@@ -11,9 +11,6 @@ void handleSigint() {
 }
 
 void handleSigquit() {
-    char beepAmount[10];
-    int index = 0;
-
     if (write(1, "\nAmount of beeps: ", 18) == -1) {
         _exit(EXIT_FAILURE);
     }
