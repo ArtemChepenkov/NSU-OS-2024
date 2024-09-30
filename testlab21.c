@@ -11,17 +11,14 @@ void handleSigint() {
 }
 
 void handleSigquit() {
-    if (write(1, "\nAmount of beeps: ", 18) == -1) {
-        _exit(EXIT_FAILURE);
-    }
+    char output[11];
+    sprintf(output, "%d", counter);
 
-    if (write(1, &counter, 4) == -1) {
-        _exit(EXIT_FAILURE);
-    }
+    write(1, "\nAmount of beeps: ", 18);
 
-    if (write(1, "\n", 1) == -1) {
-        _exit(EXIT_FAILURE);
-    }
+    write(1, output, 11);
+
+    write(1, "\n", 1);
     _exit(EXIT_SUCCESS);
 }
 
