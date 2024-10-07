@@ -12,14 +12,15 @@ void handleSigint() {
 
 void handleSigquit() {
     char output[11];
-    sprintf(output, "%d", counter);
+    int len = sprintf(output, "%d", counter);
 
     write(1, "\nAmount of beeps: ", 18);
 
-    write(1, output, 11);
+    write(1, output, len);
 
     write(1, "\n", 1);
-    _exit(EXIT_SUCCESS);
+
+   _exit(EXIT_SUCCESS);
 }
 
 int main() {
