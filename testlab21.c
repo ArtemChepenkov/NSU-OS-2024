@@ -5,36 +5,33 @@
 
 int counter = 0;
 
-void handleSigint() {
-    write(1, "\a", 1);
-    counter++;
-}
+void handle_signal(int sig) {
+    if (sig == SIGQUIT) {
+        char output[11];
+        int len = sprintf(output, "%d", counter);
 
-void handleSigquit() {
-    char output[11];
-    int len = sprintf(output, "%d", counter);
+        write(1, "\nAmount of beeps: ", 18);
 
-    write(1, "\nAmount of beeps: ", 18);
+        write(1, output, len);
 
-    write(1, output, len);
+        write(1, "\n", 1);
 
-    write(1, "\n", 1);
-
-   _exit(EXIT_SUCCESS);
+        _exit(EXIT_SUCCESS);
+    }
+    if (sig == SIGINT) {
+        write(1, "\a", 1);
+        counter++;
+    }
 }
 
 int main() {
-    struct sigaction sigint_action, sigquit_action;
 
-    sigint_action.sa_handler = handleSigint;
-    sigquit_action.sa_handler = handleSigquit;
-
-    if (sigaction(SIGINT, &sigint_action, NULL) == -1) {
+    if (sigset(SIGINT, handle_signal) == SIG_ERR) {
         perror("Failed to set SIGINT handler");
         exit(EXIT_FAILURE);
     }
 
-    if (sigaction(SIGQUIT, &sigquit_action, NULL) == -1) {
+    if (sigset(SIGQUIT, handle_signal) == SIG_ERR) {
         perror("Failed to set SIGQUIT handler");
         exit(EXIT_FAILURE);
     }
