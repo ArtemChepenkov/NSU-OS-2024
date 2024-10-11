@@ -25,7 +25,6 @@ void handle_signal(int sig) {
 }
 
 int main() {
-
     if (sigset(SIGINT, handle_signal) == SIG_ERR) {
         perror("Failed to set SIGINT handler");
         exit(EXIT_FAILURE);
