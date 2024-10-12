@@ -1,10 +1,8 @@
-#define _CRT_SECURE_NO_WARNINGS
-#define BUFFER_SIZE 5
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#define BUFFER_SIZE 100
 
 typedef struct Node {
 	char* str;
