@@ -2,8 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define BUFFER_SIZE 5
-
 typedef struct Node {
 	char* str;
 	struct Node* next;
@@ -15,7 +13,7 @@ Node* addNode(char* str, Node* previos_node) {
 		perror("Failed to malloc new node");
 	}
 
-	node->str = (char*)malloc(sizeof(char) * BUFFER_SIZE);
+	node->str = malloc(BUFSIZ);
 	if (str == NULL) {
 		perror("Failed to malloc space for string");
 	}
@@ -42,12 +40,12 @@ void freeList(Node* head) {
 }
 
 int main() {
-	char buffer[BUFFER_SIZE];
+	char buffer[BUFSIZ];
 	Node* current_node = NULL;
 	Node* head = NULL;
 	int flag = 0;
 	while (1) {
-		if (fgets(buffer, BUFFER_SIZE, stdin) == NULL) {
+		if (fgets(buffer, BUFSIZ, stdin) == NULL) {
 			break;
 		}
 
