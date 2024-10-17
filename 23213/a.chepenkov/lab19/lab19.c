@@ -1,39 +1,9 @@
+#define _FILE_OFFSET_BITS 64
 #include <stdio.h>
 #include <dirent.h>
 #include <stdlib.h>
 #include <string.h>
-
-int match_pattern_filename(char* pattern, char* name) {
-    char* p = pattern;
-    char* n = name;
-    while (*p != '\0') {
-        if (*p == '*') {
-            p++;
-            while (*n != '\0') {
-                if (match_pattern_filename(p, n) == 1) {
-                    return 1;
-                }
-                n++;
-            }
-        }
-        else if (*p == '?') {
-            if (*n == '\0') {
-                return 0;
-            }
-            p++;
-            n++;
-        }
-        else if (*p == *n) {
-            p++;
-            n++;
-        }
-        else {
-            return 0;
-        }
-    }
-    return *n == '\0';
-}
-
+#include <fnmatch.h>
 
 int main() {
     DIR* directory;
@@ -42,25 +12,23 @@ int main() {
     int flag = 0;
     fgets(pattern, BUFSIZ, stdin);
 
-    if (pattern[strlen(pattern) - 1] == '\n') {
-        pattern[strlen(pattern) - 1] = '\0';
-    }
+    pattern[strlen(pattern) - 1] = '\0';
 
-    directory = opendir("./");
+    directory = opendir(".");
     if (directory == NULL) {
         perror("Failed to open directory");
         return -1;
     }
 
     while (inp = readdir(directory)) {
-        if (match_pattern_filename(pattern, inp->d_name) == 1) {
+        if (fnmatch(pattern, inp->d_name, 0) == 0) {
             printf("%s\n", inp->d_name);
             flag = 1;
         }
     }
 
     if (flag == 0) {
-        printf("No files found\n");
+        printf("No files found with pattern: %s\n", pattern);
     }
     closedir(directory);
     return 0;
