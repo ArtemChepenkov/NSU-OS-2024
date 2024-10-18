@@ -4,6 +4,10 @@
 #include <string.h>
 #include <glob.h>
 
+int errfunc(const char* epath, int errno){
+    return -1;
+}
+
 int main() {
     DIR* directory;
     struct dirent* inp;
@@ -24,12 +28,12 @@ int main() {
         return -1;
     }
 
-    glob_res = glob(pattern, 0, NULL, &glob_struct);
+    glob_res = glob(pattern, 0, &errfunc, &glob_struct);
     if (glob_res == GLOB_NOMATCH) {
-        printf("No files found with pattern: %s\n", pattern); 
+        printf("No files found with pattern: %s\n", pattern);
         return -1;
     }
-    
+
     matched = glob_struct.gl_pathv;
     while (*matched) {
         printf("%s\n", *matched);
