@@ -5,12 +5,10 @@
 #include <glob.h>
 
 int errfunc(const char* epath, int errno){
-    return -1;
+    return 0;
 }
 
 int main() {
-    DIR* directory;
-    struct dirent* inp;
     glob_t glob_struct;
     int glob_res;
     char** matched;
@@ -20,12 +18,6 @@ int main() {
 
     if (pattern[strlen(pattern) - 1] == '\n') {
         pattern[strlen(pattern) - 1] = '\0';
-    }
-
-    directory = opendir(".");
-    if (directory == NULL) {
-        perror("Failed to open directory");
-        return -1;
     }
 
     glob_res = glob(pattern, 0, &errfunc, &glob_struct);
@@ -40,6 +32,5 @@ int main() {
         matched++;
     }
     globfree(&glob_struct);
-    closedir(directory);
     return 0;
 }
