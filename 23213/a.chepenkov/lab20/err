@@ -1,0 +1,5 @@
+/etc/flash/preexit/: Permission denied
+/etc/flash/postcreation/: Permission denied
+/etc/flash/precreation/: Permission denied
+/etc/openssl/private/: Permission denied
+/etc/inet/secret/: Permission denied
