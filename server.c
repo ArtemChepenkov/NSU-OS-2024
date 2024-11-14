@@ -49,6 +49,31 @@ void sig_io_handler(int signo, siginfo_t* info, void* context) {
 int main() {
     static struct aiocb readrq;
     static const struct aiocb* readrqv[2] = { &readrq, NULL };
+    int server_fd, client_fd;
+    struct sockaddr_un server_addr;
+
+
+    if ((server_fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
+        perror("socket");
+        exit(EXIT_FAILURE);
+    }
+
+
+    memset(&server_addr, 0, sizeof(struct sockaddr_un));
+    server_addr.sun_family = AF_UNIX;
+    strncpy(server_addr.sun_path, SOCKET_PATH, sizeof(server_addr.sun_path) - 1);
+
+    if (bind(server_fd, (struct sockaddr*)&server_addr, sizeof(struct sockaddr_un)) == -1) {
+        perror("bind");
+        close(server_fd);
+        exit(EXIT_FAILURE);
+    }
+
+    if (listen(server_fd, 10) == -1) {
+        perror("listen");
+        close(server_fd);
+        exit(EXIT_FAILURE);
+    }
 
 
     memset(&sig_io_handler_action, 0, sizeof(sig_io_handler_action));
