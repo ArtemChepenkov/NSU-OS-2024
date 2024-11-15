@@ -17,7 +17,6 @@
 struct client {
     int fd;
     struct aiocb aio_cb;
-    char buffer[BUFFER_SIZE];
 };
 
 struct client clients[MAX_CLIENTS];
@@ -38,17 +37,9 @@ void handle_client_read(int signo, siginfo_t* info, void* context) {
 
     if (aio_error(req) == 0) {
         ssize_t bytes_read = aio_return(req);
-printf("%d\n", bytes_read);
         if (bytes_read > 0) {
-            // Process the data
-            struct client* cli = (struct client*)req->aio_buf;
-printf("%s\n", req->aio_buf);
-            to_upper(cli->buffer);
-printf("%s\n", cli->buffer);
-            // Send response to client
-            write(cli->fd, cli->buffer, bytes_read);
-printf("%s\n",cli->buffer);
-	            // Re-issue the read
+            to_upper(req->aio_buf);
+            write(1, req->aio_buf, bytes_read);
             aio_read(req);
         }
         else if (bytes_read == 0) {
@@ -85,8 +76,6 @@ int main() {
     server_addr.sun_family = AF_UNIX;
     strncpy(server_addr.sun_path, SOCKET_PATH, sizeof(server_addr.sun_path) - 1);
 
-    // Bind socket
-    unlink(SOCKET_PATH);  // Remove old socket
     if (bind(server_fd, (struct sockaddr*)&server_addr, sizeof(server_addr)) == -1) {
         perror("bind");
         close(server_fd);
