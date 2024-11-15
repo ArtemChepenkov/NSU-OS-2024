@@ -33,7 +33,7 @@ int main() {
     }
 
     // Вводим сообщение для отправки
-    printf("Введите сообщение: ");
+    printf("Enter message: ");
  while(1){   fgets(buffer, BUFFER_SIZE, stdin);
 
     // Отправляем сообщение серверу
@@ -42,9 +42,9 @@ int main() {
         close(sock);
         exit(EXIT_FAILURE);
     }
-}
-    printf("Сообщение отправлено серверу\n");
 
+    printf("message sent\n");
+}
     close(sock);
     return 0;
 }

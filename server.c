@@ -3,20 +3,14 @@
 #include <string.h>
 #include <unistd.h>
 #include <ctype.h>
-#include <fcntl.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
-#include <aio.h>
-#include <errno.h>
-#include <setjmp.h>
 #include <signal.h>
+#include <errno.h>
 
 #define SOCKET_PATH "./socket"
 #define BUFFER_SIZE 1024
-
-sigjmp_buf to_exit;
-struct sigaction sig_io_handler_action;
 
 void to_upper(char* str) {
     for (int i = 0; str[i]; i++) {
@@ -24,76 +18,88 @@ void to_upper(char* str) {
     }
 }
 
+void handle_client(int client_fd) {
+    char buffer[BUFFER_SIZE];
+    ssize_t bytes_read;
 
-void sig_io_handler(int signo, siginfo_t* info, void* context) {
-    struct aiocb* req;
-    if (signo != SIGIO || info->si_signo != SIGIO) {
-        return;
+    while ((bytes_read = read(client_fd, buffer, sizeof(buffer) - 1)) > 0) {
+        buffer[bytes_read] = '\0';  // Null-terminate the string
+        to_upper(buffer);
+        printf("Processed message: %s\n", buffer);
+        write(client_fd, buffer, bytes_read);  // Send response back to client
     }
 
-    req = (struct aiocb*)info->si_value.sival_ptr;
-
-    if (aio_error(req) == 0) {
-        size_t size;
-        size = aio_return(req);
-        if (size == 0) {
-            siglongjmp(to_exit, 1);
-        }
-
-        write(1, req->aio_buf, size);
-        
-        aio_read(req);
+    if (bytes_read == 0) {
+        printf("Client disconnected.\n");
     }
+    else if (bytes_read < 0) {
+        perror("Error reading from client");
+    }
+
+    close(client_fd);
+    exit(EXIT_SUCCESS);  // End child process
 }
 
 int main() {
-    static struct aiocb readrq;
-    static const struct aiocb* readrqv[2] = { &readrq, NULL };
     int server_fd, client_fd;
     struct sockaddr_un server_addr;
 
-
+    // Create a UNIX domain socket
     if ((server_fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
         perror("socket");
         exit(EXIT_FAILURE);
     }
 
-
+    // Set up the socket address structure
     memset(&server_addr, 0, sizeof(struct sockaddr_un));
     server_addr.sun_family = AF_UNIX;
     strncpy(server_addr.sun_path, SOCKET_PATH, sizeof(server_addr.sun_path) - 1);
 
+    // Bind the socket to the address
+    unlink(SOCKET_PATH);  // Remove any existing socket
     if (bind(server_fd, (struct sockaddr*)&server_addr, sizeof(struct sockaddr_un)) == -1) {
         perror("bind");
         close(server_fd);
         exit(EXIT_FAILURE);
     }
 
+    // Listen for incoming connections
     if (listen(server_fd, 10) == -1) {
         perror("listen");
         close(server_fd);
         exit(EXIT_FAILURE);
     }
 
+    printf("Server is listening on %s\n", SOCKET_PATH);
 
-    memset(&sig_io_handler_action, 0, sizeof(sig_io_handler_action));
-    sig_io_handler_action.sa_sigaction = sig_io_handler;
-    sig_io_handler_action.sa_flags = SA_SIGINFO;
-//    sigiohandleraction.sa_mask = set;
-    sigaction(SIGIO, &sig_io_handler_action, NULL);
+    // Main server loop
+    while (1) {
+        if ((client_fd = accept(server_fd, NULL, NULL)) == -1) {
+            perror("accept");
+            continue;
+        }
+        printf("Client connected.\n");
 
-    readrq.aio_sigevent.sigev_notify = SIGEV_SIGNAL;
-    readrq.aio_sigevent.sigev_signo = SIGIO;
-    readrq.aio_sigevent.sigev_value.sival_ptr = &readrq;
-
-    if (aio_read(&readrq)) {
-        perror("aio_read");
-        exit(1);
+        // Create a new process to handle the client
+        pid_t pid = fork();
+        if (pid == 0) {
+            // Child process: handle the client
+            close(server_fd);  // Child doesn't need the listening socket
+            handle_client(client_fd);
+        }
+        else if (pid > 0) {
+            // Parent process: continue accepting clients
+            close(client_fd);  // Parent doesn't need the client socket
+        }
+        else {
+            perror("fork");
+            close(client_fd);
+        }
     }
 
-    if (!sigsetjmp(to_exit, 1)) {
-        while (1) sigpause(SIGIO);
-    }
+    // Clean up
+    close(server_fd);
+    unlink(SOCKET_PATH);
 
     return 0;
 }
